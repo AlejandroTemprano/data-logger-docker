@@ -1,0 +1,10 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: apps/dydx_candle_downloader/Dockerfile
+    container_name: dydx_candle_downloader
+    command: python -m app.dydx_candle
+    volumes:
+      - ./data:/data
+      
