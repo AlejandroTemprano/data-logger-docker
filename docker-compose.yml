@@ -6,5 +6,6 @@ services:
     container_name: dydx_candle_downloader
     command: python -m app.dydx_candle
     volumes:
+      - ./apps/dydx_candle_downloader:/app
+      - ./utils/:/utils
       - ./data:/data
-      
