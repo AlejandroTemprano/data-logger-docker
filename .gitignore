@@ -163,3 +163,5 @@ cython_debug/
 # project added
 .vscode/
 data/*
+credentials/*
+!credentials/db_credentials_example.py
