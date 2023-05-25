@@ -151,8 +151,8 @@ class DydxClient:
 
         return data
 
-    def get_market_list_6mo(self) -> tuple:
-        """Get a market list with the first 25 ONLINE markets by traded volume in usd."""
+    def get_market_list_6mo(self, number_of_markets: int = 25) -> tuple:
+        """Get a market list with the first number_of_markets ONLINE markets by traded volume in usd."""
         end = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
         start = end - timedelta(days=30 * 6)
 
@@ -161,10 +161,12 @@ class DydxClient:
         vol_traded_usd = {}
         for market in online_markets:
             candle_data = self.get_market_candle(market, start, end, resolution=Resolution.DAY_1)
-            vol_traded_usd[market] = candle_data["volume_usd"].sum()
+            vol_usd = candle_data["volume"] * candle_data["close_price"]
+            vol_traded_usd[market] = vol_usd.sum()
 
         vol_traded_usd = [
-            market for market, vol in sorted(vol_traded_usd.items(), key=lambda x: x[1], reverse=True)[:25]
+            market
+            for market, vol in sorted(vol_traded_usd.items(), key=lambda x: x[1], reverse=True)[:number_of_markets]
         ]
 
         return tuple(sorted(vol_traded_usd))
