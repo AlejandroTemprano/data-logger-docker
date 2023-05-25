@@ -98,7 +98,7 @@ class DydxClient:
         data["open"] = data["open"].astype(float)
         data["close"] = data["close"].astype(float)
         data["baseTokenVolume"] = data["baseTokenVolume"].astype(float)
-        data["trades"] = data["trades"].astype(int)
+        data["trades"] = data["trades"].astype(float)
         data["usdVolume"] = data["usdVolume"].astype(float)
         data["startingOpenInterest"] = data["startingOpenInterest"].astype(float)
 
@@ -123,6 +123,7 @@ class DydxClient:
                 "date",
                 "updated",
                 "market",
+                "resolution",
                 "open_price",
                 "close_price",
                 "high_price",
