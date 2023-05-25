@@ -64,6 +64,7 @@ class DydxClient:
 
         data = pd.DataFrame()
         end_date = end
+
         while end_date > start:
             try:
                 raw_data = self.public_client.public.get_candles(
@@ -80,6 +81,8 @@ class DydxClient:
                 return pd.DataFrame()
 
             raw_data = pd.DataFrame.from_dict(raw_data)
+            if raw_data.empty:
+                break
             raw_data["startedAt"] = pd.to_datetime(raw_data["startedAt"], utc=True)
             data = pd.concat([data, raw_data], axis=0)
 
@@ -129,7 +132,6 @@ class DydxClient:
                 "high_price",
                 "low_price",
                 "volume",
-                "trades",
             ]
         ]
 
