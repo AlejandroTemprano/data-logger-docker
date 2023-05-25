@@ -112,8 +112,6 @@ class DatabaseConnector:
                             while data := f.read(8192):
                                 copy.write(data)
 
-                        print(cur.statusmessage)
-
                     # Insert data from staging table to table_name
                     do_update_columns_str = ", ".join([f"{col} = excluded.{col}" for col in table_columns])
                     cur.execute(
