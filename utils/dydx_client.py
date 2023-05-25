@@ -88,6 +88,20 @@ class DydxClient:
 
             end_date = raw_data.loc[raw_data["startedAt"].idxmin(), "startedAt"]
 
+        if data.empty:
+            return pd.DataFrame(
+                columns=[
+                    "date",
+                    "updated",
+                    "open_price",
+                    "close_price",
+                    "high_price",
+                    "low_price",
+                    "volume",
+                    "volume_usd",
+                ]
+            )
+
         data = data.drop_duplicates(subset="startedAt", keep="last")
 
         # Format data
