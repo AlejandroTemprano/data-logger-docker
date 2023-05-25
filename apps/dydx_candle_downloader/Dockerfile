@@ -12,4 +12,7 @@ WORKDIR /utils
 COPY /utils/logger.py .
 COPY /utils/dydx_client.py .
 
+WORKDIR /credentials
+COPY /credentials/db_credentials.py .
+
 WORKDIR /
