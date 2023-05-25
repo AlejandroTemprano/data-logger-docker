@@ -8,7 +8,6 @@ This program will create a settings table if not already exist, save the basic s
 If IMPORT_HISTORICAL_CANDLES == True, this program will download and save historical data.
 
 """
-
 from datetime import datetime, timezone
 
 import pandas as pd
@@ -21,12 +20,12 @@ from utils.logger import setup_logger
 
 IMPORT_HISTORICAL_CANDLES = True
 START_DATE = datetime(2020, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
-START_DATE = datetime(2023, 5, 24, 0, 0, 0, tzinfo=timezone.utc)
+END_DATE = None  # If none, it will use current date
 
 
 def setup(logger=None):
     logger = logger if logger else setup_logger(name="db_client_logger")
-    logger.info("Starting set up for dydx_candle.py")
+    logger.info("Starting setup for dydx_candle.py")
 
     db_client = DatabaseConnector(DB_CREDENTIALS, logger)
 
@@ -42,10 +41,7 @@ def setup(logger=None):
             close_price REAL,
             high_price REAL,
             low_price REAL,
-            volume REAL,
-            volume_usd REAL,
-            trades INTEGER,
-            starting_interest REAL
+            volume REAL
         );
     """
     msg = db_client.send_request(sql)
@@ -82,22 +78,38 @@ def setup(logger=None):
 
     # Import historical candle data from exchange and fill the table
     if IMPORT_HISTORICAL_CANDLES:
-        MARKET_LIST = ("ADA-USD", "ATOM-USD", "AVAX-USD")
-        end_date = datetime.utcnow().replace(minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
+        debug_time = datetime.now()
+        # Calculate end_date if None
+        end_date = (
+            datetime.utcnow().replace(minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
+            if END_DATE is None
+            else END_DATE
+        )
+
         logger.info(f"Downloading candle date between {START_DATE} and {end_date}...")
 
         dydx_client = DydxClient(logger)
-
+        # Downloads the historical candles for each market
         candle_data = {}
         for i, market in enumerate(MARKET_LIST):
+            download_time = datetime.now()
             logger.info(f"Downloading {market}, candle {i+1}/{len(MARKET_LIST)} data... ")
             candle_data[market] = dydx_client.get_market_candle(market, START_DATE, end_date)
+            logger.debug(f"{market} data downloaded in {datetime.now() - download_time}")
         logger.info("All candle data downloaded.")
 
         candle_data = pd.concat(candle_data.values(), ignore_index=True)
-        print(candle_data)
+        candle_data = candle_data.sort_values(by="date", ascending=True)
+        print(candle_data.reset_index(drop=True))
 
-    logger.info("Set up complete.")
+        logger.info(f"Saving candle date into dydx_candle table...")
+        insert_time = datetime.now()
+        db_client.insert_candles(table_name="dydx_candles", candle_data=candle_data)
+
+        logger.debug(f"Save the downloaded data to the db took {datetime.now() - insert_time}.")
+        logger.debug(f"Total time to download and save candle data to the db: {datetime.now() - debug_time}.")
+
+    logger.info("Setup complete.")
     return
 
 
