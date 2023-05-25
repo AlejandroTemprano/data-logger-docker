@@ -26,8 +26,9 @@ START_DATE = datetime(2023, 5, 24, 0, 0, 0, tzinfo=timezone.utc)
 
 def setup(logger=None):
     logger = logger if logger else setup_logger(name="db_client_logger")
+    logger.info("Starting set up for dydx_candle.py")
 
-    db_client = DatabaseConnector(DB_CREDENTIALS)
+    db_client = DatabaseConnector(DB_CREDENTIALS, logger)
 
     # Create candles table
     sql = """
@@ -49,10 +50,10 @@ def setup(logger=None):
     """
     msg = db_client.send_request(sql)
     if msg != "CREATE TABLE":
-        print(msg)
-        print("Something happened creating the table, exiting.")
+        logger.error(msg)
+        logger.error("Something happened creating the table, exiting.")
         return
-    print("Candle table created/already exist.")
+    logger.info("Candle table created/already exist.")
 
     # Set up indexes for candle table
     sql = """
@@ -61,10 +62,10 @@ def setup(logger=None):
     """
     msg = db_client.send_request(sql)
     if msg != "CREATE INDEX":
-        print(msg)
-        print("Something happened creating the index, exiting.")
+        logger.error(msg)
+        logger.error("Something happened creating the index, exiting.")
         return
-    print("Candle index created/already exist.")
+    logger.info("Candle index created/already exist.")
 
     # Set up table permissions
     sql = """
@@ -74,28 +75,29 @@ def setup(logger=None):
     """
     msg = db_client.send_request(sql)
     if msg != "GRANT":
-        print(msg)
-        print("Something happened granting permissions, exiting.")
+        logger.error(msg)
+        logger.error("Something happened granting permissions, exiting.")
         return
-    print("Permissions granted.")
+    logger.info("Permissions granted.")
 
     # Import historical candle data from exchange and fill the table
     if IMPORT_HISTORICAL_CANDLES:
         MARKET_LIST = ("ADA-USD", "ATOM-USD", "AVAX-USD")
         end_date = datetime.utcnow().replace(minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
-        print(f"Downloading candle date between {START_DATE} and {end_date}...")
+        logger.info(f"Downloading candle date between {START_DATE} and {end_date}...")
 
         dydx_client = DydxClient(logger)
 
         candle_data = {}
         for i, market in enumerate(MARKET_LIST):
-            print(f"Downloading {market}, candle {i+1}/{len(MARKET_LIST)} data... ")
+            logger.info(f"Downloading {market}, candle {i+1}/{len(MARKET_LIST)} data... ")
             candle_data[market] = dydx_client.get_market_candle(market, START_DATE, end_date)
-        print("All candle data downloaded.")
+        logger.info("All candle data downloaded.")
 
         candle_data = pd.concat(candle_data.values(), ignore_index=True)
         print(candle_data)
 
+    logger.info("Set up complete.")
     return
 
 
