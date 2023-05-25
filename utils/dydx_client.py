@@ -98,7 +98,7 @@ class DydxClient:
         data["open"] = data["open"].astype(float)
         data["close"] = data["close"].astype(float)
         data["baseTokenVolume"] = data["baseTokenVolume"].astype(float)
-        data["trades"] = data["trades"].astype(float)
+        data["trades"] = data["trades"].astype(int)
         data["usdVolume"] = data["usdVolume"].astype(float)
         data["startingOpenInterest"] = data["startingOpenInterest"].astype(float)
 
@@ -116,6 +116,21 @@ class DydxClient:
                 "startingOpenInterest": "starting_interest",
             }
         )
+
+        # Delete unused columns and rearrange the columns
+        data = data[
+            [
+                "date",
+                "updated",
+                "market",
+                "open_price",
+                "close_price",
+                "high_price",
+                "low_price",
+                "volume",
+                "trades",
+            ]
+        ]
 
         return data
 
