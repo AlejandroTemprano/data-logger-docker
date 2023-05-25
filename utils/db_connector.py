@@ -1,5 +1,7 @@
 import psycopg
 
+from utils.logger import setup_logger
+
 
 class DatabaseConnector:
     """
@@ -15,12 +17,29 @@ class DatabaseConnector:
         }
     """
 
-    def __init__(self, db_credentials):
-        self.host = db_credentials["host"]
-        self.port = db_credentials["port"]
-        self.database = db_credentials["database"]
-        self.user = db_credentials["user"]
-        self.password = db_credentials["password"]
+    def __init__(self, db_credentials: dict, logger=None):
+        self.conninfo_str = f"""
+        host={db_credentials["host"]}
+        port={db_credentials["port"]}
+        dbname={db_credentials["database"]}
+        user={db_credentials["user"]}
+        password={db_credentials["password"]}
+        """
 
-    def create_test_table():
-        ...
+        self.logger = logger if logger else setup_logger(name="db_client_logger")
+
+    def send_request(self, sql: str, values: tuple = ()) -> str:
+        """Sends sql query to the db and return the status message."""
+        try:
+            with psycopg.connect(self.conninfo_str) as conn:
+                with conn.cursor() as cur:
+                    cur.execute(sql, values)
+                    status = cur.statusmessage
+                    conn.commit()
+
+        except psycopg.Error as e:
+            self.logger.error(e)
+            self.logger.error("Unable to execute command.")
+            return ""
+
+        return status
