@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 import pandas as pd
 
 from credentials.db_credentials import db_credentials as DB_CREDENTIALS
-from data.config import DYDX_MARKET_LIST_VOL25 as MARKET_LIST
+from data.config import DYDX_MARKET_LIST_ALL as MARKET_LIST
 from utils.db_connector import DatabaseConnector
 from utils.dydx_client import DydxClient
 from utils.logger import setup_logger
@@ -89,18 +89,13 @@ def setup(logger=None):
         logger.info(f"Downloading candle date between {START_DATE} and {end_date}...")
 
         dydx_client = DydxClient(logger)
-        # Downloads the historical candles for each market
-        candle_data = {}
-        for i, market in enumerate(MARKET_LIST):
-            download_time = datetime.now()
-            logger.info(f"Downloading {market}, candle {i+1}/{len(MARKET_LIST)} data... ")
-            candle_data[market] = dydx_client.get_market_candle(market, START_DATE, end_date)
-            logger.debug(f"{market} data downloaded in {datetime.now() - download_time}")
-        logger.info("All candle data downloaded.")
 
-        candle_data = pd.concat(candle_data.values(), ignore_index=True)
-        candle_data = candle_data.sort_values(by="date", ascending=True)
-        print(candle_data.reset_index(drop=True))
+        # Downloads the historical candles for each market
+        download_time = datetime.now()
+        MARKET_LIST = ["BTC-USD", "ADA-USD"]
+        candle_data = dydx_client.get_all_markets_candles(MARKET_LIST, START_DATE, end_date)
+        logger.debug(f"Data downloaded in {datetime.now() - download_time}")
+        logger.info("All candle data downloaded.")
 
         logger.info(f"Saving candle date into dydx_candle table...")
         insert_time = datetime.now()
