@@ -25,51 +25,60 @@ def next_target(target_interval: int = 3600) -> datetime:
     return next_target
 
 
-def main():
-    running = True
+class DxdxCandleDownloader:
+    def __init__(self, logger=None):
+        self.logger = logger if logger else setup_logger(name="dydx_candle_downloader", folder_path=".//data")
+        self.running: bool = False
 
-    """
+        # Initialize the exchange and db clients
+        self.dydx_client = DydxClient(logger)
+        self.db_client = DatabaseConnector(DB_CREDENTIALS, logger)
+
+    def run(self):
+        self.logger.info("Program start.")
+        self.running = True
+
+        target = next_target()
+        self.logger.info(f"Waiting for target: {target}")
+
+        while self.running:
+            time_now = datetime.utcnow().replace(tzinfo=timezone.utc)
+            if time_now >= target:
+                self.logger.info(f"Target reached.")
+
+                end = time_now.replace(minute=0, second=0, microsecond=0)
+                start = end - timedelta(hours=2)
+
+                # Download candles from the exchange
+                download_start = datetime.now().replace(tzinfo=timezone.utc)
+                candles = self.dydx_client.get_all_markets_candles(MARKET_LIST, start, end)
+                download_end = datetime.now().replace(tzinfo=timezone.utc)
+
+                # Saves candle data inside the db
+                save_start = datetime.now().replace(tzinfo=timezone.utc)
+                self.db_client.insert_candles("dydx_candles", candles)
+                save_end = datetime.now().replace(tzinfo=timezone.utc)
+
+                target = next_target()
+
+                self.logger.debug(f"Download time: {download_end-download_start}. Save time: {save_end-save_start}.")
+
+                self.logger.info(f"Waiting for target: {target}")
+
+            sleep(0.1)
+
+        self.logger.info("Program end.")
+
+
+def main():
     def signal_handler(signum, frame):
-        running = False
-        logger.info("Ending program. Waiting for cycle to finish...")
+        client.running = False
+        client.logger.info("Ending program. Waiting for cycle to finish...")
 
     signal.signal(signal.SIGINT, signal_handler)
-    """
 
-    logger = setup_logger(name="dydx_candle_logger", folder_path=".//data")
-    logger.info("Program start.")
-
-    # Initialize the exchange and db clients
-    dydx_client = DydxClient(logger)
-    db_client = DatabaseConnector(DB_CREDENTIALS, logger)
-
-    end = datetime.utcnow().replace(minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
-    start = end - timedelta(hours=2)
-
-    target = next_target()
-    logger.info(f"Waiting for target: {target}")
-    while running:
-        if datetime.utcnow().replace(minute=0, second=0, microsecond=0, tzinfo=timezone.utc) >= target:
-            logger.info(f"Target reached.")
-            # Download candles from the exchange
-            download_start = datetime.now().replace(tzinfo=timezone.utc)
-            candles = dydx_client.get_all_markets_candles(MARKET_LIST, start, end)
-            download_end = datetime.now().replace(tzinfo=timezone.utc)
-
-            # Saves candle data inside the db
-            save_start = datetime.now().replace(tzinfo=timezone.utc)
-            db_client.insert_candles("dydx_candles", candles)
-            save_end = datetime.now().replace(tzinfo=timezone.utc)
-
-            target = next_target()
-
-            logger.debug(f"Download time: {download_end-download_start}. Save time: {save_end-save_start}.")
-
-            logger.info(f"Waiting for target: {target}")
-
-        sleep(0.1)
-
-    logger.info("Program end.")
+    client = DxdxCandleDownloader()
+    client.run()
 
 
 if __name__ == "__main__":
