@@ -7,8 +7,7 @@ from typing import Union
 import pandas as pd
 from dydx3 import Client, DydxApiError
 from dydx3.constants import API_HOST_MAINNET, NETWORK_ID_MAINNET
-
-from utils.logger import setup_logger
+from logger import setup_logger
 
 
 @dataclass

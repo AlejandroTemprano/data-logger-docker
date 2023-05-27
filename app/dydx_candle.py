@@ -12,11 +12,11 @@ import signal
 from datetime import datetime, timedelta, timezone
 from time import sleep
 
-from credentials.db_credentials import db_credentials as DB_CREDENTIALS
-from data.config import DYDX_MARKET_LIST_ALL as MARKET_LIST
-from utils.db_connector import DatabaseConnector
-from utils.dydx_client import DydxClient
-from utils.logger import setup_logger
+from config import DYDX_MARKET_LIST_ALL as MARKET_LIST
+from db_connector import DatabaseConnector
+from db_credentials import db_credentials as DB_CREDENTIALS
+from dydx_client import DydxClient
+from logger import setup_logger
 
 
 def next_target(target_interval: int = 3600) -> datetime:

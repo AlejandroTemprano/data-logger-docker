@@ -4,8 +4,7 @@ from typing import Union
 
 import pandas as pd
 import psycopg
-
-from utils.logger import setup_logger
+from logger import setup_logger
 
 
 class DatabaseConnector:

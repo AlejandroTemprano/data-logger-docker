@@ -4,10 +4,10 @@ Example on how to get data from the DB once its saved using dydx_candle.py and s
 from datetime import datetime, timedelta, timezone
 
 import pandas as pd
+from db_connector import DatabaseConnector
 
 # Import the credentials and the db client
-from credentials.db_credentials import db_credentials as DB_CREDENTIALS
-from utils.db_connector import DatabaseConnector
+from db_credentials import db_credentials as DB_CREDENTIALS
 
 # Initialize the client
 db_client = DatabaseConnector(DB_CREDENTIALS)

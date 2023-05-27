@@ -2,12 +2,11 @@ services:
   app:
     build:
       context: .
-      dockerfile: apps/dydx_candle_downloader/Dockerfile
+      dockerfile: app/Dockerfile
     container_name: dydx_candle_downloader
-    command: python -m app.dydx_candle
+    command: python ./app/dydx_candle.py
     ports:
       - 5432:5432
     volumes:
-      - ./apps/dydx_candle_downloader:/app
-      - ./utils/:/utils
+      - ./app/:/app
       - ./data:/data
