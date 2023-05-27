@@ -11,14 +11,13 @@ If IMPORT_HISTORICAL_CANDLES == True, this program will download and save histor
 from datetime import datetime, timezone
 
 import pandas as pd
+from config import DYDX_MARKET_LIST_ALL as MARKET_LIST
+from db_connector import DatabaseConnector
+from db_credentials import db_credentials as DB_CREDENTIALS
+from dydx_client import DydxClient
+from logger import setup_logger
 
-from credentials.db_credentials import db_credentials as DB_CREDENTIALS
-from data.config import DYDX_MARKET_LIST_ALL as MARKET_LIST
-from utils.db_connector import DatabaseConnector
-from utils.dydx_client import DydxClient
-from utils.logger import setup_logger
-
-IMPORT_HISTORICAL_CANDLES = True
+IMPORT_HISTORICAL_CANDLES = False
 START_DATE = datetime(2020, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
 END_DATE = None  # If none, it will use current date
 
