@@ -1,4 +1,6 @@
 import os
+from datetime import datetime, timedelta, timezone
+from typing import Union
 
 import pandas as pd
 import psycopg
@@ -130,3 +132,55 @@ class DatabaseConnector:
         except psycopg.Error as e:
             self.logger.error(e)
             self.logger.error("Unable to execute command.")
+
+    def get_candles(
+        self,
+        market_list: Union[tuple, list, str],
+        start: datetime = None,
+        end: datetime = datetime.utcnow().replace(minute=0, second=0, microsecond=0, tzinfo=timezone.utc),
+        table_name: str = "dydx_candles",
+        to_file: bool = False,
+        file_path: str = "./dydx_candles.pkl",
+    ):
+        start = end - timedelta(hours=1) if start == None else start
+        market_list = [market_list] if isinstance(market_list, str) else market_list
+
+        market_placeholders = ",".join(["%s"] * len(market_list))
+
+        sql = f"""
+            SELECT date, market, resolution, open_price, close_price, high_price, low_price, volume FROM {table_name}
+            WHERE date BETWEEN %s AND %s
+            AND market IN ({market_placeholders})
+        """
+
+        # Add the start and end values to the values tuple
+        values = (start, end) + tuple(market_list)
+
+        # Send the query
+        data = self.send_query(sql, values)
+
+        candle_data = pd.DataFrame(
+            data,
+            columns=["date", "market", "resolution", "open_price", "close_price", "high_price", "low_price", "volume"],
+        )
+
+        candle_data = candle_data.astype(
+            {
+                "date": str,
+                "market": str,
+                "resolution": str,
+                "open_price": float,
+                "close_price": float,
+                "high_price": float,
+                "low_price": float,
+                "volume": float,
+            }
+        )
+
+        candle_data["date"] = pd.to_datetime(candle_data["date"], utc=True)
+        candle_data = candle_data.sort_values(by="date").reset_index(drop=True)
+
+        if to_file:
+            candle_data.to_pickle(file_path)
+
+        return candle_data
