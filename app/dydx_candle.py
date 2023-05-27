@@ -31,8 +31,8 @@ class DxdxCandleDownloader:
         self.running: bool = False
 
         # Initialize the exchange and db clients
-        self.dydx_client = DydxClient(logger)
-        self.db_client = DatabaseConnector(DB_CREDENTIALS, logger)
+        self.dydx_client = DydxClient(self.logger)
+        self.db_client = DatabaseConnector(DB_CREDENTIALS, self.logger)
 
     def run(self):
         self.logger.info("Program start.")
