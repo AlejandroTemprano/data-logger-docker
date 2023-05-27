@@ -166,3 +166,4 @@ data/*
 !data/config.py
 credentials/*
 !credentials/db_credentials_example.py
+app/
