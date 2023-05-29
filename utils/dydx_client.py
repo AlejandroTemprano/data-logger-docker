@@ -241,8 +241,10 @@ class DydxClient:
 
             for t in thread_dict.values():
                 t.join()
+        # If there is too many requests, send one by one.
         else:
-            for market in market_list:
+            for i, market in enumerate(market_list):
+                self.logger.debug(f"Downloading {market} data... ({i+1}/{len(market_list)})")
                 self.candles_data[market] = self.get_market_candles(market, start, end, resolution)
 
         # Merges all data candle df from the threads
