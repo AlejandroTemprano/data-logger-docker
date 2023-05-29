@@ -6,8 +6,8 @@ Run this program before dydx_candle.py to set up the tables in the database.
 This program will create a settings table if not already exist, save the basic settings including the market list and create a candle table.
 
 If IMPORT_HISTORICAL_CANDLES == True, this program will download and save historical data.
-
 """
+
 from datetime import datetime, timezone
 
 import pandas as pd
@@ -24,7 +24,7 @@ END_DATE = None  # If none, it will use current date
 
 
 def setup(logger=None):
-    logger = logger if logger else setup_logger(name="db_client_logger")
+    logger = logger if logger else setup_logger(name="db_client_logger", debug_level="DEBUG")
     logger.info("Starting setup for dydx_candle.py")
 
     db_client = DatabaseConnector(DB_CREDENTIALS, logger)
@@ -63,19 +63,6 @@ def setup(logger=None):
         return
     logger.info("Candle index created/already exist.")
 
-    # Set up table permissions
-    sql = """
-        GRANT SELECT ON TABLE dydx_candles TO "read_only";
-        GRANT ALL ON TABLE dydx_candles TO "developer";
-        GRANT ALL ON TABLE dydx_candles TO "logger";
-    """
-    msg = db_client.send_request(sql)
-    if msg != "GRANT":
-        logger.error(msg)
-        logger.error("Something happened granting permissions, exiting.")
-        return
-    logger.info("Permissions granted.")
-
     # Import historical candle data from exchange and fill the table
     if IMPORT_HISTORICAL_CANDLES:
         debug_time = datetime.now()
@@ -92,7 +79,6 @@ def setup(logger=None):
 
         # Downloads the historical candles for each market
         download_time = datetime.now()
-        MARKET_LIST = ["BTC-USD", "ADA-USD"]
         candle_data = dydx_client.get_all_markets_candles(MARKET_LIST, START_DATE, end_date)
         logger.debug(f"Data downloaded in {datetime.now() - download_time}")
         logger.info("All candle data downloaded.")
