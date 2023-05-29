@@ -1,4 +1,4 @@
-DYDX_MARKET_LIST_ALL = (
+DYDX_MARKETS_ALL = (
     "1INCH-USD",
     "AAVE-USD",
     "ADA-USD",
