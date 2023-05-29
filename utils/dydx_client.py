@@ -58,7 +58,7 @@ class DydxClient:
 
         self.request_limit_getV3 = 175  # limit of request that can handle dydx in 10 seconds. Subject to change.
 
-    def get_active_markets(self) -> list:
+    def get_online_markets(self) -> list:
         """Downloads all markets and returns a list with only the ONLINE markets."""
 
         try:
@@ -259,7 +259,7 @@ class DydxClient:
         end = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
         start = end - timedelta(days=30 * 6)
 
-        online_markets = self.get_active_markets()
+        online_markets = self.get_online_markets()
 
         vol_traded_usd = {}
         for market in online_markets:
