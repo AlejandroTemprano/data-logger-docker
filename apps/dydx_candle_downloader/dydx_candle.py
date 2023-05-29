@@ -13,10 +13,11 @@ from datetime import datetime, timedelta, timezone
 from time import sleep
 
 from credentials.db_credentials import db_credentials as DB_CREDENTIALS
-from data.config import DYDX_MARKET_LIST_ALL as MARKET_LIST
 from utils.db_connector import DatabaseConnector
 from utils.dydx_client import DydxClient
 from utils.logger import setup_logger
+
+TABLE_NAME = "dydx_candles"
 
 
 def next_target(target_interval: int = 3600) -> datetime:
@@ -27,11 +28,11 @@ def next_target(target_interval: int = 3600) -> datetime:
 
 class DxdxCandleDownloader:
     def __init__(self, logger=None):
-        self.logger = logger if logger else setup_logger(name="dydx_candle_downloader", folder_path=".//data")
+        self.logger = logger if logger else setup_logger(name=f"{TABLE_NAME}_downloader", folder_path=".//data")
         self.running: bool = False
 
         # Initialize the exchange and db clients
-        self.dydx_client = DydxClient(self.logger)
+        self.exchange_client = DydxClient(self.logger)
         self.db_client = DatabaseConnector(DB_CREDENTIALS, self.logger)
 
     def run(self):
@@ -46,17 +47,22 @@ class DxdxCandleDownloader:
             if time_now >= target:
                 self.logger.info(f"Target reached.")
 
+                # Gets start (current) time and start time.
+                # It will download the las 2 candles to overwrite the previous one to ensure is up to date
                 end = time_now.replace(minute=0, second=0, microsecond=0)
                 start = end - timedelta(hours=2)
 
+                # Downloading online markets
+                markets_list = self.exchange_client.get_online_markets()
+
                 # Download candles from the exchange
                 download_start = datetime.now().replace(tzinfo=timezone.utc)
-                candles = self.dydx_client.get_all_markets_candles(MARKET_LIST, start, end)
+                candles = self.exchange_client.get_all_markets_candles(markets_list, start, end)
                 download_end = datetime.now().replace(tzinfo=timezone.utc)
 
                 # Saves candle data inside the db
                 save_start = datetime.now().replace(tzinfo=timezone.utc)
-                self.db_client.insert_candles("dydx_candles", candles)
+                self.db_client.insert_candles(TABLE_NAME, candles)
                 save_end = datetime.now().replace(tzinfo=timezone.utc)
 
                 target = next_target()
