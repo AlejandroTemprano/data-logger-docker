@@ -96,13 +96,21 @@ class DatabaseConnector:
                     cur.execute(
                         f"""CREATE TEMPORARY TABLE staging_table_{table_name}
                         (LIKE {table_name}
-                        INCLUDING defaults
                         INCLUDING constraints
                         INCLUDING indexes);"""
                     )
                     if cur.statusmessage != "CREATE TABLE":
                         self.logger.error(cur.statusmessage)
                         self.logger.error("Unable to create staging table.")
+                        return
+
+                    cur.execute(f"CREATE SEQUENCE staging_table_{table_name}_id_seq;")
+                    cur.execute(
+                        f"ALTER TABLE staging_table_{table_name} ALTER COLUMN id SET DEFAULT nextval('staging_table_{table_name}_id_seq');"
+                    )
+                    if cur.statusmessage != "ALTER TABLE":
+                        self.logger.error(cur.statusmessage)
+                        self.logger.error("Unable to alter staging table.")
                         return
 
                     # Copy the data from the csv to the staging table
@@ -113,6 +121,8 @@ class DatabaseConnector:
                         ) as copy:
                             while data := f.read(8192):
                                 copy.write(data)
+
+                    cur.execute(f"DROP SEQUENCE IF EXISTS CASCADEstaging_table_{table_name}_id_seq;")
 
                     # Insert data from staging table to table_name
                     do_update_columns_str = ", ".join([f"{col} = excluded.{col}" for col in table_columns])
