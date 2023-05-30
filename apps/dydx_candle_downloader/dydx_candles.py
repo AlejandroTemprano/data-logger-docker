@@ -1,9 +1,7 @@
 """
-Script to download dydx candles and store them into a postgresql db.
+Script to download the last 2 dydx 1-hour candles every hour and store them into a postgresql db.
 
-It will download the previous two 1-hours candles each hour (since the previous candle si not up to date after a while) and save them.
-
-Db credentials are pulled from ./utils/db_credentials.py.
+Db credentials are pulled from ./credentials/db_credentials.py.
 
 Use setup.py before running this code to create the table inside the db and fill the table with historical data (if desired, check setup.py for more info).
 """
