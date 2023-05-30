@@ -5,12 +5,12 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 1234
-      POSTGRES_DB: exchange_data
+      POSTGRES_DB: exchanges_data
       TZ: "UTC"
     ports:
       - 5440:5432
     volumes:
-      - ./apps/dydx_candle_downloader/init_db.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./apps/db_setup/init_db.sql:/docker-entrypoint-initdb.d/init.sql
       - ./data/db/:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U postgres" ]
@@ -18,16 +18,27 @@ services:
       timeout: 5s
       retries: 5
 
-  app:
+  dydx_candles_setup:
     build:
       context: .
-      dockerfile: apps/dydx_candle_downloader/Dockerfile
-    container_name: dydx_candle_downloader
+      dockerfile: apps/dydx_candles_downloader/DockerfileSetup
+    container_name: dydx_candles_setup
     command: python -m app.setup
     volumes:
-      - ./apps/dydx_candle_downloader:/app
-      - ./utils/:/utils
       - ./data:/data
     depends_on:
       db:
         condition: service_healthy
+
+  dydx_candles_app:
+    build:
+      context: .
+      dockerfile: apps/dydx_candles_downloader/DockerfileApp
+    restart: always
+    container_name: dydx_candles_downloader
+    command: python -m app.dydx_candles
+    volumes:
+      - ./data:/data
+    depends_on:
+      dydx_candles_setup:
+        condition: service_completed_successfully
