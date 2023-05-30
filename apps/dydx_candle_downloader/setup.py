@@ -18,7 +18,8 @@ from utils.dydx_client import DydxClient
 from utils.logger import setup_logger
 
 IMPORT_HISTORICAL_CANDLES = True
-EXCHANGE_START_DATE = datetime(2020, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+DELETE_PREVIOUS_DATA = True
+EXCHANGE_START_DATE = datetime(2023, 5, 29, 0, 0, 0, tzinfo=timezone.utc)
 
 TABLE_NAME = "dydx_candles"
 
@@ -76,37 +77,52 @@ def setup(logger=None):
         market: {"first_candle": first_candle, "last_candle": last_candle} for market, first_candle, last_candle in data
     }
 
-    # Download list with all online markets
-    markets_list = exchange_client.get_online_markets()
+    if IMPORT_HISTORICAL_CANDLES:
+        # With previous data present:
+        if bool(data):
+            # DO nothing
+            if not DELETE_PREVIOUS_DATA:
+                logger.info("Previous data is present. Keeping current data.")
+                logger.info("Setup complete.")
+                return
 
-    # If previous data is present, it will confirm it has all available data points
-    if bool(data):
-        logger.info("Previous data found.")
-        logger.info(data)
+            # Erase all data
+            else:
+                logger.info("Previous data is present. Erasing previous data.")
+                sql = f"""TRUNCATE TABLE {TABLE_NAME} RESTART IDENTITY;"""
+                msg = db_client.send_request(sql)
+                if msg != "TRUNCATE TABLE":
+                    logger.error(msg)
+                    logger.error("Something happened erasing the table, exiting.")
+                    return
+                logger.info(f"Table {TABLE_NAME} truncated.")
+        else:
+            logger.info("No previous data found")
 
-    # If no previous data is present, it will download it from the exchange
-    else:
-        logger.info("No previous data found, downloading all available candle data from the exchange.")
+        logger.info("Downloading all available candle data from the exchange.")
+
+        # Download list with all online markets
+        markets_list = exchange_client.get_online_markets()
+
         # Import historical candle data from exchange and fill the table
-        if IMPORT_HISTORICAL_CANDLES:
-            debug_time = datetime.now()
+        debug_time = datetime.now()
 
-            end_date = datetime.utcnow().replace(minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
+        end_date = datetime.utcnow().replace(minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
 
-            logger.info(f"Downloading candle date between {EXCHANGE_START_DATE} and {end_date}...")
+        logger.info(f"Downloading candle date between {EXCHANGE_START_DATE} and {end_date}...")
 
-            # Downloads the historical candles for each market
-            download_time = datetime.now()
-            candle_data = exchange_client.get_all_markets_candles(markets_list, EXCHANGE_START_DATE, end_date)
-            logger.debug(f"Data downloaded in {datetime.now() - download_time}")
-            logger.info("All candle data downloaded.")
+        # Downloads the historical candles for each market
+        download_time = datetime.now()
+        candles_data = exchange_client.get_all_markets_candles(markets_list, EXCHANGE_START_DATE, end_date)
+        logger.debug(f"Data downloaded in {datetime.now() - download_time}")
+        logger.info("All candle data downloaded.")
 
-            logger.info(f"Saving candle date into dydx_candle table...")
-            insert_time = datetime.now()
-            db_client.insert_candles(table_name="dydx_candles", candle_data=candle_data)
+        logger.info(f"Saving candle date into dydx_candle table...")
+        insert_time = datetime.now()
+        db_client.insert_candles(table_name="dydx_candles", candles_data=candles_data)
 
-            logger.debug(f"Save the downloaded data to the db took {datetime.now() - insert_time}.")
-            logger.debug(f"Total time to download and save candle data to the db: {datetime.now() - debug_time}.")
+        logger.debug(f"Save the downloaded data to the db took {datetime.now() - insert_time}.")
+        logger.debug(f"Total time to download and save candle data to the db: {datetime.now() - debug_time}.")
 
     logger.info("Setup complete.")
     return
