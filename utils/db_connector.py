@@ -65,11 +65,11 @@ class DatabaseConnector:
 
         return data
 
-    def insert_candles(self, table_name: str, candle_data: pd.DataFrame):
+    def insert_candles(self, table_name: str, candles_data: pd.DataFrame):
         # Saves candle_data on a temp csv file.
         try:
             temp_file = f"./temp_{table_name}.csv"
-            candle_data.to_csv(temp_file, index=False, header=False)
+            candles_data.to_csv(temp_file, index=False, header=False)
         except Exception as e:
             self.logger.error(e)
             self.logger.error("Unable to save data as temp csv.")
@@ -122,7 +122,7 @@ class DatabaseConnector:
                             while data := f.read(8192):
                                 copy.write(data)
 
-                    cur.execute(f"DROP SEQUENCE IF EXISTS CASCADEstaging_table_{table_name}_id_seq;")
+                    cur.execute(f"DROP SEQUENCE IF EXISTS staging_table_{table_name}_id_seq CASCADE;")
 
                     # Insert data from staging table to table_name
                     do_update_columns_str = ", ".join([f"{col} = excluded.{col}" for col in table_columns])
