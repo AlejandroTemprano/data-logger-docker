@@ -1,11 +1,10 @@
 """
 setup.py for dydx_candle.py
 
-Run this program before dydx_candle.py to set up the tables in the database.
-
-This program will create a settings table if not already exist, save the basic settings including the market list and create a candle table.
+Run this program before dydx_candle.py to set up the table in the database.
 
 If IMPORT_HISTORICAL_CANDLES == True, this program will download and save historical data.
+If DELETE_PREVIOUS_DATA = True it will delete all previous data before importing the new data. If false no data will be imported.
 """
 
 from datetime import datetime, timezone
@@ -19,8 +18,8 @@ from utils.logger import setup_logger
 
 IMPORT_HISTORICAL_CANDLES = True
 DELETE_PREVIOUS_DATA = True
-EXCHANGE_START_DATE = datetime(2023, 5, 29, 0, 0, 0, tzinfo=timezone.utc)
 
+EXCHANGE_START_DATE = datetime(2020, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
 TABLE_NAME = "dydx_candles"
 
 
